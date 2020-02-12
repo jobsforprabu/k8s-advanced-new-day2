@@ -1,0 +1,88 @@
+Demo- ConfigMAP
+
+Step 1:
+Create Configmap
+
+kind: ConfigMap 
+apiVersion: v1 
+metadata:
+  name: example-configmap 
+data:
+  # Configuration values can be set as key-value properties
+  database: mongodb
+  database_uri: mongodb://localhost:27017
+  
+  # Or set as complete file contents (even JSON!)
+  keys: | 
+    image.public.key=771 
+    rsa.public.key=42
+
+#kubectl create -f cm1.txt
+#kubectl describe cm example-configmap
+
+
+Step 2:
+Injecting ConfigMap to Pod
+cm2pod
+======
+kind: Pod 
+apiVersion: v1 
+metadata:
+  name: pod-env-var 
+spec:
+  containers:
+    - name: env-var-configmap
+      image: nginx:1.7.9 
+      envFrom:
+        - configMapRef:
+            name: example-configmap
+
+# kubectl create -f cm2pod.txt
+# kubectl get pods
+# kubectl exec -it pod-env-var bash
+open a new CMD Prompt
+# kubectl edit cm pod-env-var, # change the value of Database
+# check the value ?
+
+
+Step 3:
+Asynchronous Data Transfers...
+notepad cm3.txt
+===============
+kind: Pod 
+apiVersion: v1 
+metadata:
+  name: pod-using-configmap 
+
+spec:
+  # Add the ConfigMap as a volume to the Pod
+  volumes:
+    # `name` here must match the name
+    # specified in the volume mount
+    - name: example-configmap-volume
+      # Populate the volume with config map data
+      configMap:
+        # `name` here must match the name 
+        # specified in the ConfigMap's YAML 
+        name: example-configmap
+
+  containers:
+    - name: container-configmap
+      image: nginx:1.7.9
+      # Mount the volume that contains the configuration data 
+      # into your container filesystem
+      volumeMounts:
+        # `name` here must match the name
+        # from the volumes section of this pod
+        - name: example-configmap-volume
+          mountPath: /etc/config
+
+Step 4
+
+#kubectl create -f cm3.txt
+#kubectl exec -it pod-using-configmap bash
+# cd /etc/config
+# ls
+# cat config
+<<with a small latency of 15-30 seconds, it will reflect in the value>>
+

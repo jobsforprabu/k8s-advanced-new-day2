@@ -1,0 +1,104 @@
+Step 1:
+Lets get the master ready:
+
+www.osboxes.org/ubuntu
+  -- Download ubuntu64 bit. Create the VM in Virtualbox
+  -- CPU Processors (2) , Memory - 4GB , HD -10GB Min
+  -- Host Only Adapter + NAT 
+
+Step 2
+  - root (user)
+  - Check for apt locks 
+    apt -y update
+     Network updates, Stop Security Updates
+    ps ax | grep apt
+    kill ?
+
+Step 3
+  apt -y update
+  apt install -y ssh
+  ifconfig - note down ip ?
+Step 4
+  /etc/hostname --> k8s-master
+  /etc/hosts
+   192.168.. k8s-master
+   192.168.. k8s-node1
+
+Step 5
+ apt install -y docker.io
+ systemctl start docker
+ systemctl enable docker
+
+Step 6
+ sudo swapon -s
+ sudo swapoff -a
+ vi /etc/fstab 
+   -- comment with # on the swap memory
+
+Step 7
+sudo apt install -y apt-transport-https curl
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+
+cd /etc/apt/
+sudo vim sources.list.d/kubernetes.list
+   deb http://apt.kubernetes.io/ kubernetes-xenial main
+
+Step 8
+apt -y update
+apt install -y kubeadm kubelet kubectl
+
+Step 9
+use the master IP Address below.
+
+ls /etc/resolv.conf
+-- add the below
+nameserver 8.8.8.8
+nameserver 8.8.4.4
+
+kubeadm init --pod-network-cidr=10.244.10.0/16 --apiserver-advertise-address=192.168.99.105 
+
+Step 10:
+
+
+  mkdir -p $HOME/.kube
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+kubectl get nodes
+kubectl get pods --all-namespaces
+
+Step 11:
+kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+
+
+kubectl get nodes
+kubectl get pods --all-namespaces
+
+Step 12:
+Note down the below in notepad.
+kubeadm join 192.168.99.105:6443 --token 00yikx.rrryo5al94hbyapq \
+    --discovery-token-ca-cert-hash sha256:e741fec3ae122a6470b2d6896588dd39a983bfb6a1b4710de420347e387115a6
+
+Step 13:
+New machine - K8snode1
+Repeat Step 1-8
+
+Step 14:
+execute step 12 --kubectl
+
+Step 15:
+In master :
+kubectl get nodes
+copy .kube/config to clipboard.
+
+Step 16:
+In Node:
+mkdir .kube
+create a file .kube/config - paste the config file from the master.
+
+Step 17:
+in node:
+kubectl get pods --all-namespaces
+
+
+

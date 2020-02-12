@@ -1,0 +1,60 @@
+Demo for Rolling update
+
+Step 1:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-dep
+  namespace: default
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: hello-dep 
+  template:
+    metadata:
+      labels:
+        app: hello-dep
+    spec:
+      containers:
+      - image: gcr.io/google-samples/hello-app:1.0
+        imagePullPolicy: Always
+        name: hello-dep
+        ports:
+        - containerPort: 8080
+
+
+Step 2:
+
+# kubectl get deployments
+# kubectl get pods
+# kubectl edit deployment hello-dep
+Now lets change the image to 2.0 as below with readiness Probe
+
+strategy:
+    rollingUpdate:
+      maxSurge: 100%  # change it
+      maxUnavailable: 25% 
+    type: RollingUpdate
+
+
+containers:
+      - image: gcr.io/google-samples/hello-app:2.0 # change it
+        imagePullPolicy: Always
+        name: hello-dep
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        readinessProbe: # add this section
+          failureThreshold: 3
+          httpGet:
+            path: /
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 1
+
+Step 3:
+Now lets observe kubectl get pods
